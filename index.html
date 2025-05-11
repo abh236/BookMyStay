@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BookMyStay | Hotel Booking Platform</title>
+  <link rel="stylesheet" href="booking.css">
+  <style>
+    #home, #login ,#tophotels ,#facilties {
+      display: none;
+    }
+    #home.active, #login.active,#tophotels.active ,#facilties.active {
+      display: block;
+    }
+    
+  </style>
+  
+ 
+</head>
+<body>
+
+ 
+  </header> -->
+  <header>
+    <div class="container">
+      <h1 class="logo">🏨 BookMyStay</h1>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="javascript:void(0)" onclick="showPage('home')">Home</a></li>
+          <li><a href="javascript:void(0)" onclick="showPage('tophotels')">Top Hotels</a></li>
+          <li><a href="javascript:void(0)" onclick="showPage('login')">Login</a></li>
+          <li><a href="javascript:void(0)" onclick="showPage('facilties')">Facilties</a></li>
+        </ul>
+        
+      </nav>
+    </div>
+  </header>
+
+  <section id="home" class="active">
+  
+      <section class="hero">
+  <div class="hero-content">
+    <div class="background-slider" id="backgroundSlider">
+      <button class="arrow left" onclick="prevImage()">&#8592;</button>
+      <button class="arrow right" onclick="nextImage()">&#8594;</button>
+    </div>
+    <h2>Find Hotels Near You</h2>
+    <p>Search thousands of hotels, resorts, and rooms worldwide.</p>
+    <form class="search-form" id="hotelSearchForm">
+      <input type="text" id="locationInput" placeholder="Enter city or location" required />
+      <input type="date" id="checkInDate" required />
+      <input type="date" id="checkOutDate" required />
+      <button type="submit">Search</button>
+    </form>
+  </div>
+
+
+
+
+
+     
+
+    
+  
+   
+  <div id="map1"  ></div>
+  <div id="results"></div> 
+ 
+  <script>
+   let map1;
+  let service;
+  let infowindow;
+  
+  document.getElementById('hotelSearchForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const location = document.getElementById('locationInput').value;
+    geocodeLocation(location);
+  });
+  
+  function geocodeLocation(location) {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: location }, function (results, status) {
+      if (status === 'OK') {
+        const loc = results[0].geometry.location;
+        initializeMap(loc);
+        searchHotels(loc);
+      } else {
+        alert('Geocode was not successful for the following reason: ' + status);
+      }
+    });
+  }
+
+  function initializeMap(location) {
+    map = new google.maps.Map(document.getElementById('map'), {
+      center: location,
+      zoom: 15,
+    });
+    infowindow = new google.maps.InfoWindow();
+  }
+  
+  function searchHotels(location) {
+    const request = {
+      location: location,
+      radius: '5000',
+      type: ['lodging'],
+    };
+  
+    service = new google.maps.places.PlacesService(map);
+    service.nearbySearch(request, displayResults);
+  }
+  
+  function displayResults(results, status) {
+    if (status === google.maps.places.PlacesServiceStatus.OK) {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+  
+      results.forEach((place) => {
+        const placeLoc = place.geometry.location;
+        const marker = new google.maps.Marker({
+          map: map,
+          position: placeLoc,
+        });
+  
+        google.maps.event.addListener(marker, 'click', function () {
+          infowindow.setContent(place.name);
+          infowindow.open(map, this);
+        });
+
+        
+  
+        // Create hotel card
+        const card = document.createElement('div');
+        card.className = 'hotel-card';
+  
+        const name = document.createElement('h3');
+        name.textContent = place.name;
+        card.appendChild(name);
+  
+        if (place.photos && place.photos.length > 0) {
+          const photoUrl = place.photos[0].getUrl({ maxWidth: 250, maxHeight: 150 });
+          const img = document.createElement('img');
+          img.src = photoUrl;
+          card.appendChild(img);
+        }
+  
+        const address = document.createElement('p');
+        address.textContent = place.vicinity;
+        card.appendChild(address);
+  
+        if (place.website) {
+          const websiteLink = document.createElement('a');
+          websiteLink.href = place.website;
+          websiteLink.textContent = 'Visit Website';
+          websiteLink.target = '_blank';
+          card.appendChild(websiteLink);
+        }
+  
+        resultsDiv.appendChild(card);
+      });
+    } else {
+      alert('Search was not successful for the following reason: ' + status);
+    }
+  }
+
+  </script>
+  <script   src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD1lphpxa5G4LTCvED4bN4I1fsq_lj72N8&callback=initMap"></script>
+  <div id="map" style="height: 700px; width:;"></div>
+
+  <script>
+    let map;
+
+    function initMap() {
+      const centerLocation = { lat: 28.6139, lng: 77.2090 }; 
+
+    
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: centerLocation,
+        zoom: 15,
+      });
+
+    
+      new google.maps.Marker({
+        position: centerLocation,
+        map: map,
+        title: "You are here",
+        icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+      });
+
+      
+      const service = new google.maps.places.PlacesService(map);
+      service.nearbySearch({
+        location: centerLocation,
+        radius: 1500, // in meters
+        type: ['lodging'], // lodging = hotels/motels
+      }, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+          for (let i = 0; i < results.length; i++) {
+            createMarker(results[i]);
+          }
+        }
+      });
+    }
+
+    
+    function createMarker(place) {
+      if (!place.geometry || !place.geometry.location) return;
+
+      new google.maps.Marker({
+        map,
+        position: place.geometry.location,
+        title: place.name,
+        icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+      });
+    }
+  </script>
+
+  <!-- Google Maps API with Places library -->
+  <script async defer
+     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD1lphpxa5G4LTCvED4bN4I1fsq_lj72N8&callback=initMap">
+  </script>
+</section>
+
+ 
+  <section class="featured-hotels">
+    <div class="container">
+      <h2 text-align="center"
+      style="text-align: center; font-size: 2rem; margin-bottom: 20px;">
+      Top Picks</h2>
+      <div class="hotel-cards">
+        
+        <!-- Hotel 1 -->
+        <div class="card">
+          <img src="1_14552_02.jpg" alt="Hotel Grand Palace Inn">
+          <h3>Hotel Grand Palace Inn</h3>
+          <p>₹1,800/night • Mumbai</p>
+          <a href="https://www.agoda.com/hotel-grand-palace-inn/hotel/mumbai-in.html" target="_blank">View Details</a>
+        </div>
+  
+        <!-- Hotel 2 -->
+        <div class="card">
+          <img src="1_4923_02.jpg" alt="Imperial Grand Palace Hotel">
+          <h3>Imperial Grand Palace Hotel</h3>
+          <p>₹10,500/night • Mumbai</p>
+          <a href="https://www.tripadvisor.com/Hotel_Review-g304554-d1580433-Reviews-Imperial_Grand_Palace_Hotel-Mumbai_Maharashtra.html" target="_blank">View Details</a>
+        </div>
+  
+        <!-- Hotel 3 -->
+        <div class="card">
+          <img src="0abc435fa78c2ca6fb4cb5ec86af89d0.jpg" alt="Grand Hotel Mumbai">
+          <h3>Grand Hotel Mumbai</h3>
+          <p>₹5,800/night • Mumbai</p>
+          <a href="https://www.hotels.com/ho401124/grand-hotel-mumbai-india/" target="_blank">View Details</a>
+        </div>
+  
+      </div>
+    </div>
+  </section>
+  <section id="facilities" class="facilities-section">
+    <h2>Our Facilities</h2>
+    <div class="facilities-grid">
+      <div class="facility-card">
+        <i class="fas fa-wifi"></i>
+        <h3>Free Wi-Fi</h3>
+        <p>High-speed internet available throughout the property.</p>
+      </div>
+      <div class="facility-card">
+        <i class="fas fa-swimming-pool"></i>
+        <h3>Swimming Pool</h3>
+        <p>Enjoy our clean and luxurious outdoor pool.</p>
+      </div>
+      <div class="facility-card">
+        <i class="fas fa-concierge-bell"></i>
+        <h3>Room Service</h3>
+        <p>24/7 room service to make your stay comfortable.</p>
+      </div>
+      <div class="facility-card">
+        <i class="fas fa-dumbbell"></i>
+        <h3>Gym & Fitness</h3>
+        <p>Modern fitness center with personal trainers available.</p>
+      </div>
+      <div class="facility-card">
+        <i class="fas fa-spa"></i>
+        <h3>Spa & Wellness</h3>
+        <p>Relax and unwind with our premium spa services.</p>
+      </div>
+      <div class="facility-card">
+        <i class="fas fa-parking"></i>
+        <h3>Free Parking</h3>
+        <p>Secure and spacious parking available for all guests.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ✅ WHY CHOOSE US -->
+  <section class="features">
+    <div class="container">
+      <h2>Why Choose BookMyStay?</h2>
+      <div class="feature-items">
+        <div class="feature">
+          <h3>📍 Nearby Hotel Finder</h3>
+          <p>Automatically detect your location and suggest hotels close to you.</p>
+        </div>
+        <div class="feature">
+          <h3>💳 Secure Payments</h3>
+          <p>Pay securely via credit/debit card, UPI, or wallet.</p>
+        </div>
+        <div class="feature">
+          <h3>📞 24/7 Support</h3>
+          <p>Need help? We’re here around the clock to assist you.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ✅ TESTIMONIALS -->
+  <section class="testimonials">
+    <div class="container">
+      <h2>What Our Users Say</h2>
+      <blockquote>"Easy to use, great prices, and super fast booking!" - Riya S.</blockquote>
+      <blockquote>"Found the best hotel near my conference in seconds!" - Aryan M.</blockquote>
+    </div>
+  </section>
+
+  <!-- ✅ FOOTER -->
+  <!-- <footer>
+    <div class="container">
+      <p>&copy; 2025 BookMyStay. All rights reserved.</p>
+      <p>Made with ❤️ for smart travelers</p>
+    </div>
+  </footer> -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section contact-info">
+        <h3>Contact Info</h3>
+        <p>Email: abhishek@example.com</p>
+        <p>Phone: +91 9876543210</p>
+      </div>
+  
+      <div class="footer-section terms">
+        <h3>Quick Links</h3>
+        <p><a href="#" onclick="openTerms()">Terms & Conditions</a></p>
+      </div>
+  
+      <div class="footer-section reserved">
+        <p>&copy; 2025 Abhishek Kumar. All rights reserved.</p>
+
+      </div>
+   
+    <div class="ab" style="text-align: left;
+    text-align: end;  font: bold;  font-family: Arial, Helvetica, sans-serif;
+     font-display: flex; font" > 
+      <p>
+        Made by :Abhishek kumar and Purav
+
+      </p>
+      
+      <p>
+      Branch:DSA
+        <br>
+        Roll.No:12413012 and 12413047
+      </p>
+    </div>
+    <div>
+      <img src="abc/WhatsApp Image 2025-04-28 at 1.06.12 AM.jpeg"  style="width: 100px;
+      height:100px"></img>
+      <img src="abc/WhatsApp Image 2025-04-18 at 9.22.25 PM.jpeg"  style="width: 100px;
+      height:100px"></img>
+
+    </div>
+  </div>
+  </footer>
+  
+  <!-- Modal for Terms -->
+  <div id="termsModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeTerms()">&times;</span>
+      <h2>Terms & Conditions</h2>
+      <p>By accessing this website, you agree to comply with and be bound by the following terms and conditions...</p>
+    </div>
+  </div>
+  <div id="viewCounter" class="view-counter">
+    <p>👀 Page Views: <span id="counter">0</span></p>
+  </div>
+  
+  
+  </section>
+  <section id="login">
+
+    //<section id="auth-section" class="active">
+  <div class="auth-container">
+    <h2>Create Account</h2>
+    <form id="signupForm">
+      <input type="text" id="signupName" placeholder="Full Name" required />
+      <input type="email" id="signupEmail" placeholder="Email" required />
+      <input type="password" id="signupPassword" placeholder="Password" required />
+      <button type="submit">Sign Up</button>
+    </form>
+
+    <h2>Sign In</h2>
+    <form id="signInForm">
+      <input type="email" id="loginEmail" placeholder="Email" required />
+      <input type="password" id="loginPassword" placeholder="Password" required />
+      <button type="submit">Sign In</button>
+    </form>
+
+    <div class="or">OR</div>
+
+    <button class="google" onclick="signInWith('Google')">Sign in with Google</button>
+    <button class="facebook" onclick="signInWith('Facebook')">Sign in with Facebook</button>
+    <button class="phone" onclick="showPhoneModal()">Sign in with Phone Number</button>
+  </div>
+</section>
+
+<!-- Phone Modal -->
+<div id="phoneModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closePhoneModal()">&times;</span>
+    <h2>Phone Sign-In</h2>
+    <input type="text" id="phoneInput" placeholder="Enter phone number" />
+    <button onclick="sendOTP()">Send OTP</button>
+
+    <div id="otpSection" style="display: none; margin-top: 10px;">
+      <input type="text" id="otpInput" placeholder="Enter OTP" />
+      <button onclick="verifyOTP()">Verify OTP</button>
+    </div>
+  </div>
+</div>
+
+  </section>
+  <section id="tophotels"> 
+    <h1>🌍 Top Hotel Websites</h1>
+
+    <div class="hotel-grid">
+      <div class="hotel-card">
+        <h3>Marriott International</h3>
+        <p>Luxury & business hotels including JW Marriott, Sheraton.</p>
+        <a href="https://www.marriott.com" target="_blank">Visit Site</a>
+      </div>
+  
+      <div class="hotel-card">
+        <h3>Hilton Hotels</h3>
+        <p>Global hospitality chain featuring Hilton, Conrad, and more.</p>
+        <a href="https://www.hilton.com" target="_blank">Visit Site</a>
+      </div>
+  
+      <div class="hotel-card">
+        <h3>Hyatt Hotels</h3>
+        <p>Includes Park Hyatt, Grand Hyatt, Andaz for premium stays.</p>
+        <a href="https://www.hyatt.com" target="_blank">Visit Site</a>
+      </div>
+  
+      <div class="hotel-card">
+        <h3>IHG Hotels</h3>
+        <p>Home to InterContinental, Holiday Inn, Crowne Plaza.</p>
+        <a href="https://www.ihg.com" target="_blank">Visit Site</a>
+      </div>
+  
+      <div class="hotel-card">
+        <h3>Accor Hotels</h3>
+        <p>European hotel chain with Sofitel, Novotel, Ibis, and more.</p>
+        <a href="https://www.accor.com" target="_blank">Visit Site</a>
+      </div>
+  
+      <div class="hotel-card">
+        <h3>Taj Hotels</h3>
+        <p>Iconic Indian hotel brand known for royalty & heritage.</p>
+        <a href="https://www.tajhotels.com" target="_blank">Visit Site</a>
+      </div>
+  
+      <div class="hotel-card">
+        <h3>The Oberoi Group</h3>
+        <p>Premier Indian luxury chain with award-winning service.</p>
+        <a href="https://www.oberoihotels.com" target="_blank">Visit Site</a>
+      </div>
+  
+      <div class="hotel-card">
+        <h3>ITC Hotels</h3>
+        <p>Eco-friendly luxury hotels with top Indian hospitality.</p>
+        <a href="https://www.itchotels.com" target="_blank">Visit Site</a>
+      </div>
+  
+      <div class="hotel-card">
+        <h3>Four Seasons</h3>
+        <p>Global ultra-luxury brand with unmatched service.</p>
+        <a href="https://www.fourseasons.com" target="_blank">Visit Site</a>
+      </div>
+  
+      <div class="hotel-card">
+        <h3>The Leela</h3>
+        <p>Lavish Indian brand offering elegant and royal stays.</p>
+        <a href="https://www.theleela.com" target="_blank">Visit Site</a>
+      </div>
+    </div>
+  </section>
+ 
+  
+
+
+  
+<script src="booking.js"></script>
+
+
+</body>
+</html>
